@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xe Thuong Binh</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <!-- CSS only -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous" />
+</head>
+
+<body>
+  <div id="googleMap" style="margin: 0;height: 100vh;width: 100%;"></div>
+
+  <div class="container px-4">
+    <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom bcc-purle rounded">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4 bcc-purle fw-bolder fs-2">Thiet bi dam bao an toan cho thuong binh</span>
+      </a>
+    </header>
+
+    <div class="row g-5 mt-4 py-5">
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Temperature</div>
+          <div class="fw-bold mt-5">Current :</div>
+          <div id="temp" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            20 độ C
+          </div>
+          <div class="fw-bold mb-4">Chart :</div>
+          <canvas class="bg-light my-3" id="tempChart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">Heart Rate</div>
+          <div class="fw-bold mt-5">Current :</div>
+          <div id="heart" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            90 BPM
+          </div>
+          <div class="fw-bold mb-4">Chart :</div>
+          <canvas class="bg-light my-3" id="heartChart"> </canvas>
+        </div>
+      </div>
+      <div class="col">
+        <div class="p-3 bcc-purle rounded">
+          <div class="p-2 bcc-purle2 fw-bold fs-3">SPO2</div>
+          <div class="fw-bold mt-5">Current :</div>
+          <div id="spo2" class="p-5 mb-5 fw-semibold fs-1 text-center border-bottom border-danger text-light">
+            96 %
+          </div>
+          <div class="fw-bold mb-4">Chart :</div>
+          <canvas class="bg-light my-3" id="spo2Chart"> </canvas>
+        </div>
+      </div>
+    </div>
+    <div class="d-grid col-3 mx-auto my-3 align-items-end">
+      <button id="update" class="btn btn-info">Refresh</button>
+    </div>
+
+    <div class="container m-3 p-3">
+      <div class="row">
+        <div class="col btn btn-primary m-1 p-2" id="btn-1">button 1</div>
+        <div class="col btn btn-primary m-1 p-2" id="btn-2">button 2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+
+  <!-- socket -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const temp = document.getElementById("temp");
+    const heart = document.getElementById("heart");
+    const spo2 = document.getElementById("spo2");
+    const update = document.getElementById("update");
+    const btn1 = document.getElementById("btn-1");
+    const btn2 = document.getElementById("btn-2");
+
+    let LAT = 0, LNG = 0;
+
+
+    var socket = io();
+
+    update.addEventListener("click", () => {
+      socket.emit("UPDATE", "update");
+    });
+
+    btn1.addEventListener("click", () => {
+      socket.emit("BTN1", "btn1");
+    });
+
+    btn2.addEventListener("click", () => {
+      socket.emit("BTN2", "btn2");
+    });
+
+    socket.on("message", (data) => {
+      temp.innerText = `${data.nhietdo} độ C`;
+      heart.innerText = `${data.nhiptim} BPM`;
+      spo2.innerText = `${data.oxy} %`;
+      addData(tempChart, data.nhietdo);
+      addData(heartChart, data.nhiptim);
+      addData(spo2Chart, data.oxy);
+      if (tempChart.data.datasets[0].data.length > 30) removeData(tempChart);
+      if (heartChart.data.datasets[0].data.length > 30)
+        removeData(heartChart);
+      if (spo2Chart.data.datasets[0].data.length > 30) removeData(spo2Chart);
+    });
+  </script>
+
+  <!-- chart -->
+  <script>
+    const configTempCharts = {
+      type: "line",
+      data: {
+        labels: [
+          60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30, 28,
+          26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0,
+        ],
+        datasets: [{
+          label: "Body temperature (Celsius)",
+          data: [],
+          borderColor: ["rgba(255, 100, 100, 1)"],
+          tension: 0.1,
+        }, ],
+      },
+      options: {
+        responsive: true,
+      },
+    };
+    const configHeartCharts = {
+      type: "line",
+      data: {
+        labels: [
+          60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30, 28,
+          26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0,
+        ],
+        datasets: [{
+          label: "Heart rate (BPM)",
+          data: [],
+          borderColor: ["rgba(255, 100, 100, 1)"],
+          tension: 0.1,
+        }, ],
+      },
+      options: {
+        responsive: true,
+      },
+    };
+    const configSpo2Charts = {
+      type: "line",
+      data: {
+        labels: [
+          60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30, 28,
+          26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0,
+        ],
+        datasets: [{
+          label: "SpO2 rate (%)",
+          data: [],
+          borderColor: ["rgba(255, 100, 100, 1)"],
+          tension: 0.1,
+        }, ],
+      },
+      options: {
+        responsive: true,
+      },
+    };
+
+    const tempChart = new Chart(
+      document.getElementById("tempChart").getContext("2d"),
+      configTempCharts
+    );
+    const heartChart = new Chart(
+      document.getElementById("heartChart").getContext("2d"),
+      configHeartCharts
+    );
+    const spo2Chart = new Chart(
+      document.getElementById("spo2Chart").getContext("2d"),
+      configSpo2Charts
+    );
+  </script>
+  <!-- update chart -->
+  <script>
+    function addData(chart, data) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(data);
+      });
+      chart.update();
+    }
+
+    function removeData(chart) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.shift();
+      });
+      chart.update();
+    }
+  </script>
+
+  <!-- google map -->
+  <script>
+    function myMap() {
+      const mapProp1 = {
+        center: new google.maps.LatLng(20.99861496637506, 105.85524747787383),
+        zoom: 15,
+      };
+      if (LNG !== 0 && LAT !== 0) {
+        mapProp1.center = new google.maps.LatLng(LAT, LNG)
+      }
+      // const mapProp2 = {
+      //     center: new google.maps.LatLng(21.99861496637506, 107.85524747787383),
+      //     zoom: 15,
+      // };
+      const map = new google.maps.Map(
+        document.getElementById("googleMap"),
+        mapProp1,
+        // mapProp2
+      );
+    }
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDmRAp1Vw0nUZIuwShewL3NHEu_MO52Wc8&callback=myMap"></script>
+</body>
+
+</html>
