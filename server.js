@@ -39,6 +39,23 @@ io.on("connection", (socket) => {
   /**them gi thi them o giua day */
   socket.on("event_name", (data) => {
     log(data);
+    socket.broadcast.emit("event_name", data);
+  });
+  socket.on("BTN1", (data) => {
+    log(data);
+    socket.broadcast.emit("BTN1", data);
+  });
+  socket.on("BTN2", (data) => {
+    socket.broadcast.emit("BTN1", data);
+    log(data);
+  });
+  socket.on("NGHIENG", (data) => {
+    socket.broadcast.emit("NGHIENG", data);
+    log(data);
+  });
+  socket.on("KHOANGCACH", (data) => {
+    socket.broadcast.emit("KHOANGCACH", data);
+    log(data);
   });
   /**************************** */
   //xu ly chung
