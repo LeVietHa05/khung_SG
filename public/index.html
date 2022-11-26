@@ -103,12 +103,12 @@
     });
 
     socket.on("message", (data) => {
-      temp.innerText = `${data.nhietdo} độ C`;
-      heart.innerText = `${data.nhiptim} BPM`;
-      spo2.innerText = `${data.oxy} %`;
-      addData(tempChart, data.nhietdo);
-      addData(heartChart, data.nhiptim);
-      addData(spo2Chart, data.oxy);
+      temp.innerText = `${data.NHIETDO} độ C`;
+      heart.innerText = `${data.NHIPTIM} BPM`;
+      spo2.innerText = `${data.OXY} %`;
+      addData(tempChart, data.NHIETDO);
+      addData(heartChart, data.NHIPTIM);
+      addData(spo2Chart, data.OXY);
       if (tempChart.data.datasets[0].data.length > 30) removeData(tempChart);
       if (heartChart.data.datasets[0].data.length > 30)
         removeData(heartChart);
